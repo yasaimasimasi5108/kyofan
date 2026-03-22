@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>エトワール 部隊サポートアプリ</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Cinzel+Decorative:wght@700&display=swap');
+
+  :root {
+    --bg: #0a0a12;
+    --surface: #12121e;
+    --surface2: #1a1a2e;
+    --border: #2a2a45;
+    --accent: #c8a96e;
+    --accent2: #e8c98e;
+    --text: #e8e0d0;
+    --text-dim: #888;
+    --炎: #ff6b35;
+    --炎bg: rgba(255,107,53,0.15);
+    --水: #4fc3f7;
+    --水bg: rgba(79,195,247,0.15);
+    --風: #81c784;
+    --風bg: rgba(129,199,132,0.15);
+    --聖: #fff176;
+    --聖bg: rgba(255,241,118,0.15);
+    --魔: #ce93d8;
+    --魔bg: rgba(206,147,216,0.15);
+    --想: #f48fb1;
+    --想bg: rgba(244,143,177,0.15);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── ヘッダー ── */
+  header {
+    text-align: center;
+    padding: 24px 16px 16px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, #16162a 0%, var(--bg) 100%);
+  }
+  header h1 {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: clamp(14px, 3vw, 22px);
+    letter-spacing: 0.08em;
+    background: linear-gradient(135deg, var(--accent), var(--accent2), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  header p {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 4px;
+    letter-spacing: 0.1em;
+  }
+
+  /* ── 検索タブ ── */
+  .search-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .search-tab {
+    flex: 1;
+    padding: 7px 0;
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.05em;
+  }
+  .search-tab.active {
+    background: rgba(200,169,110,0.15);
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .search-tab:not(:last-child) { border-right: 1px solid var(--border); }
+
+  /* 能力検索結果 */
+  .ability-search-results {
+    padding: 10px 16px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    max-height: 220px;
+    overflow-y: auto;
+    display: none;
+  }
+  .ability-search-results.visible { display: block; }
+  .ability-search-results::-webkit-scrollbar { width: 4px; }
+  .ability-search-results::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .ability-filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 10px;
+  }
+  .ability-filter-chip {
+    padding: 3px 10px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+  .ability-filter-chip.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(200,169,110,0.12);
+  }
+  .ability-filter-chip.cat-atk.active { border-color: #ef9a9a; color: #ef9a9a; background: rgba(239,154,154,0.12); }
+  .ability-filter-chip.cat-def.active { border-color: #80cbc4; color: #80cbc4; background: rgba(128,203,196,0.12); }
+  .ability-filter-chip.cat-dmg.active { border-color: #ffcc02; color: #ffcc02; background: rgba(255,204,2,0.12); }
+  .ability-filter-chip.cat-other.active { border-color: #b0bec5; color: #b0bec5; background: rgba(176,190,197,0.12); }
+
+  .ability-result-group { margin-bottom: 10px; }
+  .ability-result-label {
+    font-size: 10px;
+    font-weight: 700;
+    margin-bottom: 5px;
+    letter-spacing: 0.08em;
+  }
+  .ability-result-chars {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .ability-result-chip {
+    padding: 3px 9px;
+    border-radius: 5px;
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid transparent;
+  }
+  .ability-result-chip:hover { opacity: 0.8; filter: brightness(1.2); }
+
+  /* ── キャラ選択エリア ── */
+  .search-area {
+    padding: 16px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .search-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .search-input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--text-dim); }
+
+  .filter-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .filter-btn {
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+  .filter-btn.active, .filter-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(200,169,110,0.1);
+  }
+  .filter-btn[data-attr="炎"].active { border-color: var(--炎); color: var(--炎); background: var(--炎bg); }
+  .filter-btn[data-attr="水"].active { border-color: var(--水); color: var(--水); background: var(--水bg); }
+  .filter-btn[data-attr="風"].active { border-color: var(--風); color: var(--風); background: var(--風bg); }
+  .filter-btn[data-attr="聖"].active { border-color: var(--聖); color: var(--聖); background: var(--聖bg); }
+  .filter-btn[data-attr="魔"].active { border-color: var(--魔); color: var(--魔); background: var(--魔bg); }
+  .filter-btn[data-attr="想"].active { border-color: var(--想); color: var(--想); background: var(--想bg); }
+
+  /* キャラ一覧グリッド */
+  .char-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 12px 16px;
+    max-height: 200px;
+    overflow-y: auto;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+  .char-grid::-webkit-scrollbar { width: 4px; }
+  .char-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .char-chip {
+    padding: 5px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    user-select: none;
+  }
+  .char-chip:hover {
+    border-color: var(--accent);
+    background: rgba(200,169,110,0.1);
+  }
+  .char-chip .attr-dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    margin-right: 5px;
+    vertical-align: middle;
+  }
+
+  /* ── 部隊エリア ── */
+  .squad-area {
+    padding: 16px;
+  }
+  .squad-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .squad-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+  }
+  .clear-btn {
+    background: transparent;
+    border: 1px solid #444;
+    color: var(--text-dim);
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+  .clear-btn:hover { border-color: #e57373; color: #e57373; }
+
+  /* 隊列スロット */
+  .squad-slots {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 600px) {
+    .squad-slots { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  .slot {
+    background: var(--surface);
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    padding: 10px 6px;
+    text-align: center;
+    min-height: 80px;
+    position: relative;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+  .slot.filled { border-style: solid; }
+  .slot.filled:hover .slot-remove {
+    opacity: 1;
+  }
+  .slot-num {
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    margin-bottom: 6px;
+  }
+  .slot-attr-badge {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 700;
+    margin-bottom: 5px;
+  }
+  .slot-name {
+    font-size: 10px;
+    line-height: 1.4;
+    word-break: break-all;
+    color: var(--text);
+  }
+  .slot-empty-text {
+    font-size: 10px;
+    color: var(--border);
+    line-height: 1.3;
+  }
+  .slot-remove {
+    position: absolute;
+    top: 4px; right: 4px;
+    width: 16px; height: 16px;
+    background: #c62828;
+    border-radius: 50%;
+    font-size: 9px;
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s;
+    cursor: pointer;
+    border: none;
+    line-height: 1;
+  }
+
+  /* ── 能力一覧テーブル ── */
+  .ability-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .ability-section-title {
+    padding: 10px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .ability-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+  .ability-table th {
+    padding: 8px 10px;
+    text-align: left;
+    background: var(--surface2);
+    color: var(--text-dim);
+    font-weight: 500;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .ability-table td {
+    padding: 7px 10px;
+    border-bottom: 1px solid rgba(42,42,69,0.5);
+    vertical-align: top;
+    line-height: 1.5;
+  }
+  .ability-table tr:last-child td { border-bottom: none; }
+  .ability-table tr:hover td { background: rgba(200,169,110,0.04); }
+
+  .ability-name {
+    color: var(--text-dim);
+    white-space: nowrap;
+    font-size: 11px;
+  }
+  .ability-char-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .ability-tag {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 2px 7px;
+    font-size: 10px;
+    line-height: 1.4;
+  }
+  .ability-tag .tag-name {
+    color: var(--text);
+    font-weight: 500;
+  }
+  .ability-tag .tag-how {
+    color: var(--text-dim);
+    margin-left: 4px;
+    font-size: 9px;
+  }
+
+  .empty-squad {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-dim);
+    font-size: 12px;
+    line-height: 2;
+  }
+
+  /* 属性カラー */
+  .attr-炎 { color: var(--炎); }
+  .attr-水 { color: var(--水); }
+  .attr-風 { color: var(--風); }
+  .attr-聖 { color: var(--聖); }
+  .attr-魔 { color: var(--魔); }
+  .attr-想 { color: var(--想); }
+  .bg-炎 { background: var(--炎bg); border-color: var(--炎) !important; }
+  .bg-水 { background: var(--水bg); border-color: var(--水) !important; }
+  .bg-風 { background: var(--風bg); border-color: var(--風) !important; }
+  .bg-聖 { background: var(--聖bg); border-color: var(--聖) !important; }
+  .bg-魔 { background: var(--魔bg); border-color: var(--魔) !important; }
+  .bg-想 { background: var(--想bg); border-color: var(--想) !important; }
+  .badge-炎 { background: var(--炎bg); color: var(--炎); border: 1px solid var(--炎); }
+  .badge-水 { background: var(--水bg); color: var(--水); border: 1px solid var(--水); }
+  .badge-風 { background: var(--風bg); color: var(--風); border: 1px solid var(--風); }
+  .badge-聖 { background: var(--聖bg); color: var(--聖); border: 1px solid var(--聖); }
+  .badge-魔 { background: var(--魔bg); color: var(--魔); border: 1px solid var(--魔); }
+  .badge-想 { background: var(--想bg); color: var(--想); border: 1px solid var(--想); }
+  .dot-炎 { background: var(--炎); }
+  .dot-水 { background: var(--水); }
+  .dot-風 { background: var(--風); }
+  .dot-聖 { background: var(--聖); }
+  .dot-魔 { background: var(--魔); }
+  .dot-想 { background: var(--想); }
+
+  /* 能力カテゴリ色 */
+  .cat-atk { color: #ef9a9a; }
+  .cat-def { color: #80cbc4; }
+  .cat-dmg { color: #ffcc02; }
+  .cat-other { color: #b0bec5; }
+
+  /* スロット選択ハイライト */
+  .slot.selecting {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(200,169,110,0.3);
+    animation: pulse 1s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { box-shadow: 0 0 0 2px rgba(200,169,110,0.3); }
+    50% { box-shadow: 0 0 0 4px rgba(200,169,110,0.1); }
+  }
+
+  .slot-hint {
+    font-size: 10px;
+    color: var(--accent);
+    text-align: center;
+    margin-bottom: 8px;
+    display: none;
+  }
+  .slot-hint.visible { display: block; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>✦ Etoile Squad Builder ✦</h1>
+  <p>巨乳ファンタジーバースト — 部隊サポートツール</p>
+</header>
+
+<!-- キャラ選択エリア -->
+<div class="search-area">
+  <div class="search-tabs">
+    <button class="search-tab active" id="tabChar" onclick="switchTab('char')">👤 キャラ名検索</button>
+    <button class="search-tab" id="tabAbility" onclick="switchTab('ability')">⚡ 能力検索</button>
+  </div>
+  <!-- キャラ名検索UI -->
+  <div id="charSearchUI">
+    <div class="search-row">
+      <input class="search-input" id="searchInput" placeholder="🔍 キャラ名で検索…" oninput="renderCharGrid()">
+    </div>
+    <div class="filter-row" id="filterRow">
+      <button class="filter-btn active" data-attr="全" onclick="setFilter('全')">全て</button>
+      <button class="filter-btn" data-attr="炎" onclick="setFilter('炎')">🔥 炎</button>
+      <button class="filter-btn" data-attr="水" onclick="setFilter('水')">💧 水</button>
+      <button class="filter-btn" data-attr="風" onclick="setFilter('風')">🍃 風</button>
+      <button class="filter-btn" data-attr="聖" onclick="setFilter('聖')">✨ 聖</button>
+      <button class="filter-btn" data-attr="魔" onclick="setFilter('魔')">🔮 魔</button>
+      <button class="filter-btn" data-attr="想" onclick="setFilter('想')">💖 想</button>
+    </div>
+  </div>
+  <!-- 能力検索UI -->
+  <div id="abilitySearchUI" style="display:none">
+    <div class="search-row">
+      <input class="search-input" id="abilitySearchInput" placeholder="🔍 能力名で検索… (例: 物理防御DOWN)" oninput="renderAbilitySearch()">
+    </div>
+    <div class="ability-filter-chips" id="abilityCatChips">
+      <button class="ability-filter-chip active" data-cat="全" onclick="setAbilityCat('全')">全て</button>
+      <button class="ability-filter-chip cat-atk" data-cat="atk" onclick="setAbilityCat('atk')">🗡 攻撃UP</button>
+      <button class="ability-filter-chip cat-def" data-cat="def" onclick="setAbilityCat('def')">🛡 防御DOWN / 被ダメUP</button>
+      <button class="ability-filter-chip cat-dmg" data-cat="dmg" onclick="setAbilityCat('dmg')">💥 ダメージUP</button>
+      <button class="ability-filter-chip cat-other" data-cat="other" onclick="setAbilityCat('other')">✦ その他</button>
+    </div>
+  </div>
+</div>
+
+<!-- 能力検索結果 -->
+<div class="ability-search-results" id="abilitySearchResults"></div>
+
+<div class="char-grid" id="charGrid"></div>
+
+<!-- 部隊エリア -->
+<div class="squad-area">
+  <div class="squad-header">
+    <span class="squad-title">⚔️ 部隊編成 (最大6名)</span>
+    <button class="clear-btn" onclick="clearSquad()">全解除</button>
+  </div>
+  <p class="slot-hint" id="slotHint">▲ スロットを選択中 — キャラをクリックして配置</p>
+  <div class="squad-slots" id="squadSlots"></div>
+
+  <div class="ability-section" id="abilitySection">
+    <div class="ability-section-title">📊 部隊能力一覧</div>
+    <div id="abilityContent">
+      <div class="empty-squad">
+        部隊にキャラを追加すると<br>能力一覧が表示されます
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const CHARS = [{"name": "ソルティナ", "attr": "魔", "abilities": {"物理防御DOWN": "奥義"}}, {"name": "【サムライカウガール】刹華", "attr": "炎", "abilities": {"物理防御DOWN": "奥義", "回数付物理ダメージUP": "自分 (スキル)"}}, {"name": "ディアナ", "attr": "聖", "abilities": {"物理攻撃UP": "自分 (スキル)", "物理防御DOWN": "奥義"}}, {"name": "リリララ", "attr": "風", "abilities": {"物理防御DOWN": "奥義"}}, {"name": "厄叉", "attr": "魔", "abilities": {"物理攻撃UP": "自分 (スキル)", "物理防御DOWN": "奥義"}}, {"name": "エヴァ", "attr": "魔", "abilities": {"物理攻撃UP": "自分 (スキル)", "物理防御DOWN": "奥義"}}, {"name": "ギル", "attr": "風", "abilities": {"物理攻撃UP": "自分 (スキル)", "物理防御DOWN": "奥義", "回数付物理ダメージUP": "自分 (スキル)"}}, {"name": "シリウス", "attr": "聖", "abilities": {"物理攻撃UP": "自分 (スキル)", "物理防御DOWN": "奥義", "x属性攻撃UP": "自分 (スキル)"}}, {"name": "イルーギオ", "attr": "水", "abilities": {"物理攻撃UP": "自分 (奥義)", "物理防御DOWN": "奥義"}}, {"name": "エレイン", "attr": "魔", "abilities": {"物理攻撃UP": "自分 (スキル)", "物理防御DOWN": "奥義", "x属性攻撃UP": "自分 (奥義)", "物理ダメージUP": "自分 (パッシブ)"}}, {"name": "【恋のビッグウェーブライド】プリシラ", "attr": "風", "abilities": {"物理防御DOWN": "奥義", "x属性の敵からの被ダメージUP": "奥義"}}, {"name": "【エロ修道女】ソルティナ", "attr": "想", "abilities": {"物理攻撃UP": "自分 (スキル)", "物理防御DOWN": "奥義"}}, {"name": "ヒサラ", "attr": "風", "abilities": {"物理防御DOWN": "B", "x属性攻撃UP": "自分 (スキル)"}}, {"name": "【氷上の芸術家】イルーギオ", "attr": "風", "abilities": {"物理攻撃UP": "自分 (スキル) 味方全体 (同盟戦中)", "物理防御DOWN": "奥義", "x属性の敵からの被ダメージUP": "スキル (同盟戦中)", "加算ダメージUP": "自分 (スキル) 味方全体 (同盟戦中)"}}, {"name": "【知恵と勇気の女神】アテナ", "attr": "聖", "abilities": {"物理防御DOWN": "奥義"}}, {"name": "ゲルディン", "attr": "風", "abilities": {"物理攻撃UP": "味方全体 (スキル)", "物理防御DOWN": "奥義", "x属性攻撃UP": "自分 (奥義)", "x属性の敵からの被ダメージUP": "スキル"}}, {"name": "ハニス", "attr": "想", "abilities": {"物理攻撃UP": "自分 (スキル)", "物理防御DOWN": "奥義"}}, {"name": "【ビキニでタコ殴り】ギル", "attr": "水", "abilities": {"物理攻撃UP": "自分 (スキル)", "物理防御DOWN": "奥義"}}, {"name": "【捕縛杖の聖騎士】カティーシャ", "attr": "聖", "abilities": {"物理攻撃UP": "自分 (スキル)", "物理防御DOWN": "奥義", "x属性攻撃UP": "自分 (スキル)"}}, {"name": "【稀代の発明家】パステル", "attr": "風", "abilities": {"物理攻撃UP": "自分 (スキル)", "物理防御DOWN": "奥義"}}, {"name": "【流浪の剣客】サーカ", "attr": "風", "abilities": {"物理攻撃UP": "自分 (スキル)", "物理防御DOWN": "奥義", "スキル追加ダメージ": "自分 (スキル)"}}, {"name": "【スイカ、一刀両断っ!!】ヒサラ", "attr": "想", "abilities": {"物理攻撃UP": "自分 (奥義) 味方全体 (奥義) (同盟戦中)", "物理防御DOWN": "奥義", "x属性攻撃UP": "自分 (スキル) 味方全体 (スキル) (同盟戦中)", "奥義被ダメージUP": "スキル"}}, {"name": "【滑走するウェイトレス】アシュレイ", "attr": "炎", "abilities": {"物理攻撃UP": "味方全体 (スキル)+(奥義)", "物理防御DOWN": "奥義", "x属性攻撃UP": "味方全体 (スキル)", "回数付物理ダメージUP": "味方全体 (スキル)"}}, {"name": "【恵みの花籠】黒騎士", "attr": "魔", "abilities": {"物理攻撃UP": "自分 (スキル)", "物理防御DOWN": "奥義+A"}}, {"name": "【幻想の踊り子】メッセリア", "attr": "風", "abilities": {"物理攻撃UP": "味方全体 (スキル)", "物理防御DOWN": "A"}}, {"name": "ジェミニ", "attr": "炎", "abilities": {"物理防御DOWN": "A"}}, {"name": "エスティリエル", "attr": "風", "abilities": {"物理防御DOWN": "A", "魔法防御DOWN": "A"}}, {"name": "ルシエ", "attr": "風", "abilities": {"物理防御DOWN": "A"}}, {"name": "【フルーツバスケット】ビアンカ", "attr": "水", "abilities": {"物理防御DOWN": "A"}}, {"name": "ジゼル", "attr": "聖", "abilities": {"物理攻撃UP": "自分 (奥義)", "物理防御DOWN": "A"}}, {"name": "ニーナ", "attr": "水", "abilities": {"物理防御DOWN": "A", "魔法防御DOWN": "A", "x属性の敵からの被ダメージUP": "奥義"}}, {"name": "イネス", "attr": "魔", "abilities": {"物理攻撃UP": "自分 (スキル)", "物理防御DOWN": "A", "x属性の敵からの被ダメージUP": "奥義"}}, {"name": "リン", "attr": "風", "abilities": {"物理防御DOWN": "A", "x属性攻撃UP": "自分 (スキル) + 風属性味方 (スキル)", "ダメージUP": "風属性味方 (パッシブ)"}}, {"name": "【大空祭の剣士】ラーグエン", "attr": "聖", "abilities": {"物理防御DOWN": "A", "x属性の敵からの被ダメージUP": "奥義"}}, {"name": "【ホカホカ点心】リリララ", "attr": "炎", "abilities": {"物理防御DOWN": "A", "x属性攻撃UP": "味方全体 (スキル) (2凸)", "x属性の敵からの被ダメージUP": "奥義", "回数付物理ダメージUP": "味方全体 (スキル)"}}, {"name": "【メイドエロチャンター】イルーギオ", "attr": "聖", "abilities": {"物理攻撃UP": "自分 (奥義)", "物理防御DOWN": "A"}}, {"name": "【無敵の皇妃】グラディス", "attr": "炎", "abilities": {"物理攻撃UP": "自分 (スキル)", "物理防御DOWN": "A"}}, {"name": "【にゃんこ】ルールー", "attr": "想", "abilities": {"物理攻撃UP": "自分 (奥義)", "物理防御DOWN": "A"}}, {"name": "リリス", "attr": "魔", "abilities": {"物理防御DOWN": "B"}}, {"name": "【にじげんカノジョ】碧井エリカ", "attr": "想", "abilities": {"物理防御DOWN": "A"}}, {"name": "【暗殺ビアガール】累", "attr": "風", "abilities": {"物理攻撃UP": "自分 (奥義)", "物理防御DOWN": "A"}}, {"name": "【悩殺セーター】ヒルディス", "attr": "想", "abilities": {"物理攻撃UP": "自分 (スキル)", "物理防御DOWN": "A"}}, {"name": "【冒険家】ヘンリエッティ", "attr": "炎", "abilities": {"物理防御DOWN": "A", "x属性の敵からの被ダメージUP": "スキル"}}, {"name": "ベガリア", "attr": "魔", "abilities": {"物理防御DOWN": "A", "魔法防御DOWN": "A"}}, {"name": "【エレガントバニー】ベルナデット", "attr": "水", "abilities": {"物理防御DOWN": "A", "x属性攻撃UP": "味方全体 (奥義)", "x属性の敵からの被ダメージUP": "スキル", "回数付ダメージUP": "味方全体 (奥義)"}}, {"name": "【爆乳の黒猫】厄叉", "attr": "想", "abilities": {"物理攻撃UP": "自分 (スキル)", "物理防御DOWN": "A", "x属性の敵からの被ダメージUP": "奥義"}}, {"name": "【うし乳娘】ベガリア", "attr": "魔", "abilities": {"魔法攻撃UP": "自分 (スキル)", "物理防御DOWN": "A", "x属性攻撃UP": "自分 (スキル)", "x属性の敵からの被ダメージUP": "奥義", "スキル追加ダメージ": "自分 (スキル)"}}, {"name": "【ヴェルン神聖騎士団団長】フリギス", "attr": "聖", "abilities": {"物理防御DOWN": "A (2凸)", "ダメージUP": "自分 (奥義)"}}, {"name": "【妖魔を狩る者】ラーグエン", "attr": "魔", "abilities": {"物理攻撃UP": "自分 (奥義)", "物理防御DOWN": "A (同盟戦中) + 奥義", "x属性の敵からの被ダメージUP": "スキル (同盟戦中)", "通常攻撃被ダメージUP": "特殊", "被ダメージUP": "奥義"}}, {"name": "ヒルディス", "attr": "炎", "abilities": {"物理攻撃UP": "自分 (スキル)", "物理防御DOWN": "A+奥義"}}, {"name": "【闇夜の吸血鬼】鵺", "attr": "想", "abilities": {"物理攻撃UP": "自分 (スキル)", "物理防御DOWN": "A+奥義", "x属性の敵からの被ダメージUP": "奥義"}}, {"name": "【エルロンの聖騎士】リュッカ", "attr": "風", "abilities": {"物理攻撃UP": "自分 (スキル)", "物理防御DOWN": "A+奥義", "x属性の敵からの被ダメージUP": "奥義", "回数付物理ダメージUP": "味方全体 (スキル)"}}, {"name": "【脂肪燃焼の着物娘】ビューティア", "attr": "炎", "abilities": {"物理防御DOWN": "A+奥義"}}, {"name": "【ゴージャスでノーブルな浴衣娘】グレイシー", "attr": "水", "abilities": {"物理攻撃UP": "自分 (奥義)", "物理防御DOWN": "A+奥義", "x属性攻撃UP": "自分 (スキル)"}}, {"name": "【ハミ乳オーバーオール】シャリク", "attr": "風", "abilities": {"物理防御DOWN": "A+奥義", "x属性の敵からの被ダメージUP": "奥義"}}, {"name": "【双子巫女】ラウール", "attr": "炎", "abilities": {"物理防御DOWN": "パッシブ", "魔法防御DOWN": "パッシブ", "ダメージUP": "味方全体 (パッシブ)"}}, {"name": "【高貴なる皇妃】シャムシェル", "attr": "魔", "abilities": {"魔法攻撃UP": "自分 (奥義)"}}, {"name": "【敬虔なる癒やし手】イシュトヴィア", "attr": "聖", "abilities": {"魔法防御DOWN": "A"}}, {"name": "テレシア", "attr": "想", "abilities": {"魔法攻撃UP": "自分 (奥義+スキル)", "魔法防御DOWN": "A", "x属性攻撃UP": "自分 (奥義)"}}, {"name": "黒騎士", "attr": "魔", "abilities": {"魔法防御DOWN": "A+奥義", "x属性の敵からの被ダメージUP": "スキル"}}, {"name": "フレイ", "attr": "聖", "abilities": {"ダメージUP": "味方全体 (奥義)"}}, {"name": "リュッカ", "attr": "風", "abilities": {"物理攻撃UP": "自分 (スキル)"}}, {"name": "メイニアス", "attr": "風", "abilities": {"物理攻撃UP": "自分 (スキル)", "回数付ダメージUP": "自分 (奥義)"}}, {"name": "ビアンカ", "attr": "想", "abilities": {"物理攻撃UP": "自分 (スキル)", "x属性攻撃UP": "自分 (スキル)"}}, {"name": "【祝祭の皇妃】シャムシェル", "attr": "炎", "abilities": {"魔法攻撃UP": "自分 (スキル)", "魔法防御DOWN": "奥義"}}, {"name": "シャティ", "attr": "風", "abilities": {"x属性攻撃UP": "自分 (奥義+スキル)", "x属性の敵からの被ダメージUP": "スキル", "回数付ダメージUP": "自分 (奥義)"}}, {"name": "【悩殺☆ビキニ】テレシア", "attr": "想", "abilities": {"回数付魔法ダメージUP": "自分 (スキル)"}}, {"name": "オフィーリオ", "attr": "炎", "abilities": {"魔法防御DOWN": "A"}}, {"name": "【最強魔女】シャハル", "attr": "炎", "abilities": {"魔法防御DOWN": "A", "x属性の敵からの被ダメージUP": "スキル"}}, {"name": "ベルナデット", "attr": "風", "abilities": {"物理攻撃UP": "味方全体 (パッシブ)", "物理防御DOWN": "B", "回数付物理ダメージUP": "味方全体 (奥義)"}}, {"name": "【誘惑の吸血鬼】ソルティナ", "attr": "魔", "abilities": {"物理攻撃UP": "自分 (スキル)"}}, {"name": "刹華", "attr": "炎", "abilities": {"物理攻撃UP": "自分 (スキル)", "x属性攻撃UP": "自分 (奥義)"}}, {"name": "ラピス", "attr": "水", "abilities": {"魔法攻撃UP": "自分 (スキル)", "x属性の敵からの被ダメージUP": "奥義"}}, {"name": "ルスト", "attr": "魔", "abilities": {"魔法攻撃UP": "自分 (奥義)", "魔法防御DOWN": "B"}}, {"name": "【トップダンサー】メッセリア", "attr": "聖", "abilities": {"魔法攻撃UP": "味方全体 (スキル)"}}, {"name": "ローサ", "attr": "聖", "abilities": {"物理攻撃UP": "自分 (スキル)", "x属性攻撃UP": "自分 (奥義)"}}, {"name": "【パイとクッキーの女王】アフロディア", "attr": "想", "abilities": {"回数付ダメージUP": "味方全体 (スキル)"}}, {"name": "ルールー", "attr": "風", "abilities": {"物理攻撃UP": "自分 (スキル)", "x属性攻撃UP": "自分 (奥義)"}}, {"name": "【ドラゴン粉砕】メデューサ", "attr": "魔", "abilities": {"魔法攻撃UP": "自分 (スキル)", "x属性の敵からの被ダメージUP": "奥義", "回数付魔法ダメージUP": "自分 (スキル)"}}, {"name": "インリーン", "attr": "水", "abilities": {"回数付物理ダメージUP": "自分 (スキル)"}}, {"name": "ヴィアトリーチェ", "attr": "炎", "abilities": {"魔法攻撃UP": "自分 (スキル)", "x属性の敵からの被ダメージUP": "奥義"}}, {"name": "トリシュ", "attr": "想", "abilities": {"魔法攻撃UP": "味方全体 (奥義)", "物理攻撃UP": "味方全体 (奥義)"}}, {"name": "マグダレーナ", "attr": "風", "abilities": {"魔法攻撃UP": "味方全体 (スキル)", "魔法防御DOWN": "奥義"}}, {"name": "【チョコまみれの竜戦士】ヒルディス", "attr": "水", "abilities": {"魔法防御DOWN": "A+奥義"}}, {"name": "【むちむちサキュバス】カティーシャ", "attr": "風", "abilities": {"物理攻撃UP": "自分 (奥義)", "物理防御DOWN": "B"}}, {"name": "プリシラ", "attr": "想", "abilities": {"x属性攻撃UP": "自分 (奥義)", "x属性の敵からの被ダメージUP": "奥義", "回数付魔法ダメージUP": "自分 (スキル)"}}, {"name": "ジールカ", "attr": "水", "abilities": {"物理攻撃UP": "自分 (スキル)"}}, {"name": "【アメリカンポリス】ラピス", "attr": "水", "abilities": {"魔法攻撃UP": "自分 (奥義)", "魔法防御DOWN": "奥義"}}, {"name": "【スウィートバニー】アーティア", "attr": "想", "abilities": {"回数付ダメージUP": "味方全体 (スキル)"}}, {"name": "ラウール", "attr": "想", "abilities": {"魔法攻撃UP": "自分 (スキル)", "魔法防御DOWN": "A", "x属性攻撃UP": "自分 (スキル) (特殊)"}}, {"name": "クルール", "attr": "想", "abilities": {"魔法防御DOWN": "奥義", "x属性攻撃UP": "自分 (奥義) (特殊)"}}, {"name": "フィオノーレ", "attr": "聖", "abilities": {"x属性攻撃UP": "自分 (奥義)", "x属性の敵からの被ダメージUP": "奥義"}}, {"name": "【下乳チアガール】ジェミニ", "attr": "風", "abilities": {"物理攻撃UP": "味方1人", "回数付物理ダメージUP": "味方1人"}}, {"name": "【下乳チアガール】ヴァネッサ", "attr": "水", "abilities": {"魔法攻撃UP": "味方1人", "回数付魔法ダメージUP": "味方1人"}}, {"name": "【プールあがり】アーティア", "attr": "水", "abilities": {"魔法防御DOWN": "A"}}, {"name": "【誘惑の裸エプロン】ディアナ", "attr": "聖", "abilities": {"魔法攻撃UP": "自分 (奥義)", "x属性攻撃UP": "自分 (奥義)", "回数付魔法ダメージUP": "味方全体 (スキル)"}}, {"name": "ボニータ", "attr": "炎", "abilities": {"物理攻撃UP": "味方全体 (奥義)", "回数付ダメージUP": "味方全体 (奥義) (特殊)"}}, {"name": "【学園ブルマー】黒騎士", "attr": "魔", "abilities": {"魔法攻撃UP": "自分 (奥義)", "魔法防御DOWN": "A"}}, {"name": "【幸運の花嫁】テレシア", "attr": "聖", "abilities": {"魔法攻撃UP": "味方全体 (スキル)"}}, {"name": "ルイーズ", "attr": "水", "abilities": {"物理防御DOWN": "B+奥義", "x属性攻撃UP": "自分 (スキル)"}}, {"name": "【純真の花嫁】ジゼル", "attr": "炎", "abilities": {"魔法防御DOWN": "A", "x属性攻撃UP": "自分 (奥義)", "回数付魔法ダメージUP": "味方全体 (スキル)"}}, {"name": "【魅惑の裸エプロン】ジールカ", "attr": "想", "abilities": {"魔法攻撃UP": "自分 (奥義) + 味方全体 (スキル)", "x属性攻撃UP": "自分 (奥義)"}}, {"name": "アンジェ", "attr": "炎", "abilities": {"魔法攻撃UP": "自分 (スキル)", "魔法防御DOWN": "奥義", "x属性攻撃UP": "自分 (スキル)"}}, {"name": "ラフィーネ", "attr": "聖", "abilities": {"ダメージUP": "味方全体 (パッシブ)", "回数付魔法ダメージUP": "味方全体 (スキル)", "回数付物理ダメージUP": "味方全体 (スキル)"}}, {"name": "【キミのハートを狙い撃ち♪】シャティ", "attr": "水", "abilities": {"x属性の敵からの被ダメージUP": "奥義", "回数付ダメージUP": "自分 (奥義)"}}, {"name": "【スケートボーダー】鵺", "attr": "風", "abilities": {}}, {"name": "アドリエンヌ", "attr": "水", "abilities": {"魔法攻撃UP": "味方全体 (パッシブ)", "魔法防御DOWN": "B", "回数付魔法ダメージUP": "味方全体 (奥義)"}}, {"name": "【大空祭の花火師】ヴィアトリーチェ", "attr": "炎", "abilities": {"魔法防御DOWN": "B"}}, {"name": "【ハイレグの力に取り込まれし者】黒騎士", "attr": "魔", "abilities": {"x属性攻撃UP": "魔属性味方 (スキル)", "x属性の敵からの被ダメージUP": "スキル", "ダメージUP": "魔属性味方 (パッシブ)", "回数付ダメージUP": "味方全体 (スキル)"}}, {"name": "シュシュ", "attr": "魔", "abilities": {"魔法防御DOWN": "奥義"}}, {"name": "【にじげんカノジョ】東雲アイル", "attr": "水", "abilities": {"物理攻撃UP": "自分 (スキル)"}}, {"name": "【夢のようなひととき】エスティリエル", "attr": "風", "abilities": {"魔法防御DOWN": "B"}}, {"name": "【ゴスロリ乳魔】シュシュ", "attr": "水", "abilities": {"物理防御DOWN": "B", "x属性の敵からの被ダメージUP": "奥義", "ダメージUP": "味方全体 (奥義+パッシブ)"}}, {"name": "【乳揺れチアガール】ノーラ", "attr": "想", "abilities": {"物理防御DOWN": "B", "x属性攻撃UP": "味方全体 (奥義)"}}, {"name": "【俺の妹は水兵さん】ボニータ", "attr": "水", "abilities": {"魔法攻撃UP": "自分 (スキル)", "魔法防御DOWN": "奥義"}}, {"name": "【凄腕傭兵】シャティ", "attr": "魔", "abilities": {"物理防御DOWN": "B", "x属性の敵からの被ダメージUP": "奥義", "回数付物理ダメージUP": "自分 (スキル)"}}, {"name": "【孤高のバイカー】インリーン", "attr": "炎", "abilities": {"物理攻撃UP": "自分 (奥義)"}}, {"name": "【聖夜の乳魔】ルスト", "attr": "水", "abilities": {"魔法防御DOWN": "B", "x属性の敵からの被ダメージUP": "奥義"}}, {"name": "【乳魔な恵み手】シュシュ", "attr": "炎", "abilities": {"魔法攻撃UP": "自分 (スキル)", "x属性の敵からの被ダメージUP": "スキル"}}, {"name": "【むっつり女学生】ラフィーネ", "attr": "想", "abilities": {"物理攻撃UP": "自分 (奥義)", "x属性攻撃UP": "自分 (奥義)"}}, {"name": "【羽子板の着物娘】リリス", "attr": "想", "abilities": {"魔法攻撃UP": "自分 (奥義)", "魔法防御DOWN": "B+奥義", "x属性の敵からの被ダメージUP": "スキル"}}, {"name": "【双子巫女】クルール", "attr": "炎", "abilities": {"魔法防御DOWN": "A+奥義+パッシブ", "x属性の敵からの被ダメージUP": "スキル"}}, {"name": "ノワ", "attr": "聖", "abilities": {"ダメージUP": "味方全体 (パッシブ)", "物理ダメージUP": "パッシブ", "魔法ダメージUP": "パッシブ"}}, {"name": "【初めてのチョコづくり】カグヤ", "attr": "水", "abilities": {"魔法攻撃UP": "味方全体 (スキル) (パッシブ)", "物理攻撃UP": "味方全体 (スキル) (パッシブ)"}}, {"name": "【チョコレートはわたし♪】アンジェ", "attr": "炎", "abilities": {"魔法防御DOWN": "A+奥義", "x属性攻撃UP": "味方全体 (スキル)"}}, {"name": "【生真面目ナース】ラピス", "attr": "風", "abilities": {"ダメージUP": "味方全体 (パッシブ)", "回数付ダメージUP": "味方全体 (奥義)"}}, {"name": "麗鬼", "attr": "炎", "abilities": {"魔法防御DOWN": "B", "x属性の敵からの被ダメージUP": "奥義 + 特殊"}}, {"name": "【小悪魔アイドル】ニーナ", "attr": "想", "abilities": {"魔法攻撃UP": "味方全体 (スキル)", "物理攻撃UP": "味方全体 (スキル)", "ダメージUP": "奥義"}}, {"name": "【アメスク留学生】アーティア", "attr": "風", "abilities": {"物理攻撃UP": "自分 (スキル)", "x属性攻撃UP": "自分 (奥義)", "x属性の敵からの被ダメージUP": "奥義", "回数付物理ダメージUP": "自分 (スキル)"}}, {"name": "【乳揺れチアガール】アシュレイ", "attr": "炎", "abilities": {"加算ダメージUP": "味方全体 (スキル)"}}, {"name": "ベルベル", "attr": "魔", "abilities": {"回数付ダメージUP": "味方全体 (スキル)"}}, {"name": "ソニア", "attr": "聖", "abilities": {"物理攻撃UP": "自分 (奥義)(スキル)", "x属性の敵からの被ダメージUP": "奥義", "回数付物理ダメージUP": "味方全体 (スキル)"}}, {"name": "アルシャール", "attr": "水", "abilities": {"物理攻撃UP": "味方全体 (パッシブ)", "x属性の敵からの被ダメージUP": "奥義"}}, {"name": "ネフィリア", "attr": "水", "abilities": {"魔法防御DOWN": "奥義", "x属性の敵からの被ダメージUP": "スキル"}}, {"name": "【うし乳娘】累＆鵺", "attr": "魔", "abilities": {"物理攻撃UP": "味方全体 (スキル)", "物理防御DOWN": "B", "x属性攻撃UP": "味方全体 (パッシブ)", "x属性の敵からの被ダメージUP": "奥義"}}, {"name": "ラスウェル", "attr": "魔", "abilities": {"物理攻撃UP": "味方全体 (奥義)", "物理防御DOWN": "B", "x属性の敵からの被ダメージUP": "スキル", "ダメージUP": "魔属性味方 (パッシブ)", "加算物理ダメージUP": "味方全体 (パッシブ)"}}, {"name": "【箱入り浴衣娘】ルールー", "attr": "炎", "abilities": {"物理防御DOWN": "B", "x属性の敵からの被ダメージUP": "奥義", "ダメージUP": "味方全体 (奥義)"}}, {"name": "【紅の花魁】アンジェ", "attr": "炎", "abilities": {"魔法攻撃UP": "自分 (スキル)", "魔法防御DOWN": "奥義", "x属性攻撃UP": "自分 (スキル)", "x属性の敵からの被ダメージUP": "スキル"}}, {"name": "スーラ", "attr": "風", "abilities": {"魔法攻撃UP": "味方全体 (スキル) 自分 (奥義)", "魔法防御DOWN": "A+奥義", "x属性攻撃UP": "自分 (スキル)"}}, {"name": "【食欲の女戦士】ラウール＆クルール", "attr": "炎", "abilities": {"物理攻撃UP": "自分 (スキル)", "魔法防御DOWN": "奥義", "加算ダメージUP": "自分 (スキル)"}}, {"name": "ユラ", "attr": "水", "abilities": {"魔法防御DOWN": "A+特殊", "x属性の敵からの被ダメージUP": "奥義", "加算魔法ダメージUP": "自分 (奥義)"}}, {"name": "【困惑の花嫁】マグダレーナ", "attr": "聖", "abilities": {"魔法攻撃UP": "味方全体 (スキル) (パッシブ)", "魔法防御DOWN": "奥義", "回数付魔法ダメージUP": "味方全体 (奥義)"}}, {"name": "【日傘の花嫁】麗鬼", "attr": "炎", "abilities": {"魔法攻撃UP": "自分 (スキル)", "魔法防御DOWN": "B", "x属性の敵からの被ダメージUP": "奥義"}}, {"name": "【疾風のくノ一】リン", "attr": "想", "abilities": {"物理攻撃UP": "自分 (奥義)", "x属性の敵からの被ダメージUP": "スキル", "物理ダメージUP": "自分 (奥義)"}}, {"name": "【伝説の勇者】ジェミニ", "attr": "聖", "abilities": {"魔法攻撃UP": "自分 (奥義)", "魔法防御DOWN": "B", "x属性攻撃UP": "聖属性味方 (パッシブ)"}}, {"name": "【ビキニでお祝い】ヴィアトリーチェ", "attr": "炎", "abilities": {"魔法防御DOWN": "B", "x属性攻撃UP": "自分 (奥義) 炎属性味方 (パッシブ)", "x属性の敵からの被ダメージUP": "奥義"}}, {"name": "【跳躍する天使】リュッカ", "attr": "聖", "abilities": {"物理攻撃UP": "自分 (奥義)", "x属性攻撃UP": "自分 (奥義)", "x属性の敵からの被ダメージUP": "スキル"}}, {"name": "リュシル", "attr": "水", "abilities": {"魔法攻撃UP": "自分 (スキル)", "物理防御DOWN": "B", "x属性攻撃UP": "味方全体 (スキル)", "x属性の敵からの被ダメージUP": "奥義"}}, {"name": "アガト", "attr": "魔", "abilities": {"魔法攻撃UP": "自分 (スキル)", "物理防御DOWN": "B", "x属性攻撃UP": "自分 (スキル)", "x属性の敵からの被ダメージUP": "奥義"}}, {"name": "【超乳エリート指揮官】カティーシャ", "attr": "想", "abilities": {"物理攻撃UP": "味方全体 (奥義)", "物理防御DOWN": "B+奥義", "x属性攻撃UP": "味方全体 (パッシブ)", "回数付物理ダメージUP": "味方全体 (スキル)"}}, {"name": "メルフィス", "attr": "聖", "abilities": {"ダメージUP": "味方全体 (スキル)", "通常攻撃被ダメージUP": "奥義", "通常攻撃追撃": "味方全体 (奥義)", "被ダメージUP": "パッシブ"}}, {"name": "【母乳の皇妃】ロクサーヌ", "attr": "聖", "abilities": {"魔法防御DOWN": "B+奥義", "x属性攻撃UP": "自分 (スキル)", "x属性の敵からの被ダメージUP": "奥義"}}, {"name": "【目覚めし雷槍】テレシア", "attr": "想", "abilities": {"魔法攻撃UP": "自分 (スキル)", "魔法防御DOWN": "A", "x属性攻撃UP": "自分 (奥義)", "魔法ダメージUP": "自分 (奥義)", "通常攻撃追撃": "自分 (パッシブ)"}}, {"name": "【ミルキーバニー】エレイン", "attr": "魔", "abilities": {"x属性攻撃UP": "味方全体 (奥義)", "ダメージUP": "魔属性味方 (スキル)", "回数付ダメージUP": "魔属性味方 (スキル)", "加算ダメージUP": "味方全体 (奥義)"}}, {"name": "ペトラギルス", "attr": "風", "abilities": {"ダメージUP": "味方全体 (パッシブ)", "物理ダメージUP": "味方全体 (奥義)", "スキル追加ダメージ": "味方全体 (奥義)"}}, {"name": "【ノルンの悪魔】ハニス", "attr": "炎", "abilities": {"魔法攻撃UP": "自分 (奥義)", "魔法防御DOWN": "A+奥義", "x属性の敵からの被ダメージUP": "スキル"}}, {"name": "【うし乳娘】メルフィス", "attr": "聖", "abilities": {"回数付ダメージUP": "味方全体 (奥義)"}}, {"name": "【聖乳ウェイトレス】モーラン", "attr": "水", "abilities": {"x属性攻撃UP": "自分 (奥義)", "加算ダメージUP": "自分 (スキル)", "通常攻撃追撃": "自分 (スキル)", "スキル追加ダメージ": "自分 (奥義) (特殊)"}}, {"name": "【爆乳武闘家】ルイーズ", "attr": "風", "abilities": {"物理攻撃UP": "自分 (奥義)+(スキル)", "物理ダメージUP": "自分 (奥義)", "加算物理ダメージUP": "自分 (スキル)"}}, {"name": "桜邪", "attr": "炎", "abilities": {"物理攻撃UP": "自分 (奥義)+(スキル)", "x属性攻撃UP": "自分 (スキル)", "x属性の敵からの被ダメージUP": "スキル", "加算物理ダメージUP": "自分 (スキル)", "スキル追加ダメージ": "自分 (パッシブ)"}}, {"name": "蘭邪", "attr": "魔", "abilities": {"ダメージUP": "味方全体 (奥義+パッシブ)", "回数付ダメージUP": "味方全体 (スキル)"}}, {"name": "【滑走するウェイトレス】アシュレイ", "attr": "炎", "abilities": {"物理攻撃UP": "味方全体 (奥義)+(スキル)", "物理防御DOWN": "奥義", "x属性攻撃UP": "味方全体 (スキル)", "回数付物理ダメージUP": "味方全体 (スキル)"}}, {"name": "【真紅の超乳奏姫】アドリエンヌ", "attr": "想", "abilities": {"物理攻撃UP": "味方全体 (パッシブ)", "回数付物理ダメージUP": "味方全体 (奥義)"}}, {"name": "【山の爆乳サンタ】ゲルディン", "attr": "炎", "abilities": {"物理攻撃UP": "自分 (スキル)", "物理防御DOWN": "B+奥義", "x属性の敵からの被ダメージUP": "スキル", "回数付物理ダメージUP": "自分 (スキル)"}}, {"name": "【魔法少女】まじかるナターシャ", "attr": "風", "abilities": {"魔法攻撃UP": "自分 (スキル)", "x属性の敵からの被ダメージUP": "奥義", "魔法ダメージUP": "自分 (特殊)", "加算ダメージUP": "自分 (特殊)", "奥義追加ダメージ": "自分 (特殊)"}}, {"name": "【勝ち馬に乗りたい】ボニータ", "attr": "炎", "abilities": {"物理攻撃UP": "自分 (スキル)", "奥義追加ダメージ": "自分 (奥義)"}}, {"name": "【新春、書き初め】イルーギオ", "attr": "聖", "abilities": {"魔法攻撃UP": "味方全体 (スキル)", "x属性攻撃UP": "味方全体 (スキル)", "x属性の敵からの被ダメージUP": "スキル", "回数付魔法ダメージUP": "味方全体 (スキル) (2凸)"}}, {"name": "【幼馴染みはパティシエール】リネット", "attr": "水", "abilities": {"回数付ダメージUP": "味方全体 (パッシブ)"}}, {"name": "キャロライナ", "attr": "想", "abilities": {"ダメージUP": "味方全体 (パッシブ)", "被ダメージUP": "奥義"}}, {"name": "怪盗ステラ", "attr": "魔", "abilities": {"被ダメージUP": "パッシブ"}}, {"name": "ムーシャン", "attr": "風", "abilities": {"回数付ダメージUP": "味方全体 (パッシブ)", "被ダメージUP": "奥義", "スキル追加ダメージ": "味方全体 (奥義)"}}, {"name": "【ハートの女王】グレイシー", "attr": "想", "abilities": {"物理攻撃UP": "自分 (スキル)", "物理防御DOWN": "A+奥義", "ダメージUP": "味方全体  (奥義) (特殊)", "スキル追加ダメージ": "自分 (スキル)+自分 (パッシブ)", "奥義追加ダメージ": "自分 (奥義)"}}, {"name": "【不思議の国の】ラスウェル", "attr": "炎", "abilities": {"物理防御DOWN": "B", "x属性攻撃UP": "味方全体 (奥義)", "物理ダメージUP": "自分 (スキル)", "加算ダメージUP": "自分 (スキル)", "被ダメージUP": "スキル"}}, {"name": "【チョコよりも甘い誘惑】エスティリエル", "attr": "水", "abilities": {"物理防御DOWN": "パッシブ", "x属性の敵からの被ダメージUP": "スキル", "被ダメージUP": "スキル", "スキル被ダメージUP": "奥義"}}, {"name": "【恋する吟遊詩人】ペトラギルス", "attr": "想", "abilities": {"ダメージUP": "味方全体 (パッシブ)"}}, {"name": "【ヤミカワ少女】リリス", "attr": "魔", "abilities": {"魔法攻撃UP": "自分 (奥義)", "魔法防御DOWN": "A", "x属性の敵からの被ダメージUP": "スキル", "スキル追加ダメージ": "自分 (パッシブ)"}}, {"name": "ヴェラ", "attr": "魔", "abilities": {"物理防御DOWN": "A+奥義", "x属性の敵からの被ダメージUP": "スキル", "スキル被ダメージUP": "スキル"}}, {"name": "【独奏のヴァイオリニスト】アドリエンヌ", "attr": "聖", "abilities": {"回数付ダメージUP": "味方全体 (スキル)", "スキル追加ダメージ": "味方全体 (スキル) (同盟戦中)", "奥義追加ダメージ": "味方全体 (奥義)"}}, {"name": "【エロチャイナドレス】シリウス", "attr": "聖", "abilities": {"物理攻撃UP": "自分 (奥義)", "物理防御DOWN": "B", "x属性攻撃UP": "自分 (奥義)", "x属性の敵からの被ダメージUP": "奥義"}}, {"name": "【ホワイトバニー】ノワ", "attr": "風", "abilities": {"魔法攻撃UP": "味方全体 (奥義)", "魔法防御DOWN": "B", "x属性の敵からの被ダメージUP": "スキル", "回数付魔法ダメージUP": "味方全体 (奥義)", "魔法ダメージUP": "味方全体 (奥義)", "スキル被ダメージUP": "スキル"}}];
+
+// 能力カテゴリ分類
+const ABILITY_CATS = {
+  '魔法攻撃UP': 'atk', '物理攻撃UP': 'atk',
+  '物理防御DOWN': 'def', '魔法防御DOWN': 'def',
+  'x属性攻撃UP': 'atk', 'x属性の敵からの被ダメージUP': 'def',
+  'ダメージUP': 'dmg', '回数付ダメージUP': 'dmg', '回数付魔法ダメージUP': 'dmg',
+  '回数付物理ダメージUP': 'dmg', '物理ダメージUP': 'dmg', '魔法ダメージUP': 'dmg',
+  '加算ダメージUP': 'dmg', '加算魔法ダメージUP': 'dmg', '加算物理ダメージUP': 'dmg',
+  '通常攻撃被ダメージUP': 'def', '通常攻撃追撃': 'other', '被ダメージUP': 'def',
+  'スキル追加ダメージ': 'dmg', '奥義被ダメージUP': 'def', '奥義追加ダメージ': 'dmg',
+  'スキル被ダメージUP': 'def'
+};
+
+const ALL_ABILITIES = [
+  '魔法攻撃UP','物理攻撃UP','物理防御DOWN','魔法防御DOWN','x属性攻撃UP',
+  'x属性の敵からの被ダメージUP','ダメージUP','回数付ダメージUP','回数付魔法ダメージUP',
+  '回数付物理ダメージUP','物理ダメージUP','魔法ダメージUP','加算ダメージUP',
+  '加算魔法ダメージUP','加算物理ダメージUP','通常攻撃被ダメージUP','通常攻撃追撃',
+  '被ダメージUP','スキル追加ダメージ','奥義被ダメージUP','奥義追加ダメージ','スキル被ダメージUP'
+];
+
+// State
+let currentFilter = '全';
+let squad = [null, null, null, null, null, null]; // 6スロット
+let selectingSlot = null; // 選択中のスロット番号
+let currentTab = 'char';
+let currentAbilityCat = '全';
+// 能力別チェックボックス状態: { '物理防御DOWN': Set{'A','奥義',...}, ... }
+const abilityChecks = {};
+
+// 各能力に存在するタグ一覧（事前計算）
+const ABILITY_TAGS = {"魔法攻撃UP": ["スキル", "パッシブ", "味方1人", "味方全体", "奥義", "自分"], "物理攻撃UP": ["スキル", "パッシブ", "味方1人", "味方全体", "奥義", "自分"], "物理防御DOWN": ["A", "B", "パッシブ", "奥義"], "魔法防御DOWN": ["A", "B", "パッシブ", "奥義", "特殊"], "x属性攻撃UP": ["スキル", "パッシブ", "味方全体", "奥義", "属性限定", "特殊", "自分"], "x属性の敵からの被ダメージUP": ["スキル", "奥義", "特殊"], "ダメージUP": ["スキル", "パッシブ", "味方全体", "奥義", "属性限定", "特殊", "自分"], "回数付ダメージUP": ["スキル", "パッシブ", "味方全体", "奥義", "属性限定", "特殊", "自分"], "回数付魔法ダメージUP": ["スキル", "味方1人", "味方全体", "奥義", "自分"], "回数付物理ダメージUP": ["スキル", "味方1人", "味方全体", "奥義", "自分"], "物理ダメージUP": ["スキル", "パッシブ", "味方全体", "奥義", "自分"], "魔法ダメージUP": ["パッシブ", "味方全体", "奥義", "特殊", "自分"], "加算ダメージUP": ["スキル", "味方全体", "奥義", "特殊", "自分"], "加算魔法ダメージUP": ["奥義", "自分"], "加算物理ダメージUP": ["スキル", "パッシブ", "味方全体", "自分"], "通常攻撃被ダメージUP": ["奥義", "特殊"], "通常攻撃追撃": ["スキル", "パッシブ", "味方全体", "奥義", "自分"], "被ダメージUP": ["スキル", "パッシブ", "奥義"], "スキル追加ダメージ": ["スキル", "パッシブ", "味方全体", "奥義", "特殊", "自分"], "奥義被ダメージUP": ["スキル"], "奥義追加ダメージ": ["味方全体", "奥義", "特殊", "自分"], "スキル被ダメージUP": ["スキル", "奥義"]};
+
+function getTagsFromVal(val) {
+  const tags = new Set();
+  if (val.includes('味方全体')) tags.add('味方全体');
+  if (val.includes('味方1人')) tags.add('味方1人');
+  if (/[炎水風聖魔想]属性/.test(val)) tags.add('属性限定');
+  if (val.includes('自分')) tags.add('自分');
+  if (/^A|[^a-zA-Z]A[^a-zA-Z+]|[^a-zA-Z]A$|^A$/.test(val) || val.includes('奥義+A') || val.includes('A+') || val.startsWith('A')) tags.add('A');
+  if (/^B|[^a-zA-Z]B[^a-zA-Z+]|[^a-zA-Z]B$|^B$/.test(val) || val.includes('B+') || val.startsWith('B')) tags.add('B');
+  if (val.includes('奥義')) tags.add('奥義');
+  if (val.includes('パッシブ')) tags.add('パッシブ');
+  if (val.includes('スキル')) tags.add('スキル');
+  if (val.includes('特殊')) tags.add('特殊');
+  return tags;
+}
+
+function toggleAbilityCb(ab, tag, cbEl) {
+  if (!abilityChecks[ab]) abilityChecks[ab] = new Set();
+  if (cbEl.checked) {
+    abilityChecks[ab].add(tag);
+    cbEl.closest('.ability-cb-chip').classList.add('checked');
+  } else {
+    abilityChecks[ab].delete(tag);
+    cbEl.closest('.ability-cb-chip').classList.remove('checked');
+  }
+  renderAbilitySearch();
+}
+
+function charMatchesAbility(char, ab) {
+  if (!char.abilities[ab]) return false;
+  const checks = abilityChecks[ab];
+  if (!checks || checks.size === 0) return true; // チェックなし=全員
+  const valTags = getTagsFromVal(char.abilities[ab]);
+  for (const t of checks) {
+    if (valTags.has(t)) return true;
+  }
+  return false;
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('tabChar').classList.toggle('active', tab === 'char');
+  document.getElementById('tabAbility').classList.toggle('active', tab === 'ability');
+  document.getElementById('charSearchUI').style.display = tab === 'char' ? '' : 'none';
+  document.getElementById('abilitySearchUI').style.display = tab === 'ability' ? '' : 'none';
+  document.getElementById('charGrid').style.display = tab === 'char' ? '' : 'none';
+  const res = document.getElementById('abilitySearchResults');
+  if (tab === 'ability') {
+    renderAbilitySearch();
+  } else {
+    res.classList.remove('visible');
+  }
+}
+
+function setAbilityCat(cat) {
+  currentAbilityCat = cat;
+  document.querySelectorAll('.ability-filter-chip').forEach(b => {
+    b.classList.toggle('active', b.dataset.cat === cat);
+  });
+  renderAbilitySearch();
+}
+
+function renderAbilitySearch() {
+  const results = document.getElementById('abilitySearchResults');
+  const q = document.getElementById('abilitySearchInput').value.trim().toLowerCase();
+
+  const filteredAbilities = ALL_ABILITIES.filter(ab => {
+    const catOk = currentAbilityCat === '全' || (ABILITY_CATS[ab] || 'other') === currentAbilityCat;
+    const nameOk = !q || ab.toLowerCase().includes(q);
+    return catOk && nameOk;
+  });
+
+  if (filteredAbilities.length === 0) {
+    results.classList.add('visible');
+    results.innerHTML = '<div class="no-result">該当する能力が見つかりません</div>';
+    return;
+  }
+
+  const catColors = { atk: 'cat-atk', def: 'cat-def', dmg: 'cat-dmg', other: 'cat-other' };
+
+  const groups = filteredAbilities.map(ab => {
+    const allChars = CHARS.filter(c => c.abilities[ab]);
+    if (allChars.length === 0) return null;
+    const filteredChars = allChars.filter(c => charMatchesAbility(c, ab));
+    return { ab, allChars, filteredChars };
+  }).filter(Boolean);
+
+  if (groups.length === 0) {
+    results.classList.add('visible');
+    results.innerHTML = '<div class="no-result">該当する能力を持つキャラがいません</div>';
+    return;
+  }
+
+  results.classList.add('visible');
+  results.innerHTML = groups.map(({ ab, allChars, filteredChars }) => {
+    const cat = ABILITY_CATS[ab] || 'other';
+    const tags = ABILITY_TAGS[ab] || [];
+    const checkedSet = abilityChecks[ab] || new Set();
+
+    // チェックボックス群
+    const cbHtml = tags.map(tag => {
+      const isChecked = checkedSet.has(tag);
+      const cbId = 'cb_' + ab + '_' + tag;
+      return `<label class="ability-cb-chip ${isChecked ? 'checked' : ''}" onclick="event.stopPropagation()">
+        <input type="checkbox" id="${cbId}" ${isChecked ? 'checked' : ''}
+          onchange="toggleAbilityCb('${ab.replace(/'/g,"\'")}','${tag}',this)">
+        ${tag}
+      </label>`;
+    }).join('');
+
+    // キャラチップ
+    const chips = filteredChars.map(ch => {
+      const safeName = ch.name.replace(/'/g, "\'");
+      return `<div class="ability-result-chip bg-${ch.attr}" onclick="onCharClick('${safeName}')">
+        <span class="attr-${ch.attr}" style="font-weight:700">${ch.name}</span>
+        <span class="chip-how">${ch.abilities[ab]}</span>
+      </div>`;
+    }).join('');
+
+    const countLabel = checkedSet.size > 0
+      ? `${filteredChars.length}/${allChars.length}人`
+      : `${allChars.length}人`;
+
+    return `<div class="ability-result-group">
+      <div class="ability-result-header">
+        <div class="ability-result-header-label">
+          <span class="${catColors[cat]}" style="font-size:11px;font-weight:700">${ab}</span>
+          <span class="ability-result-count">(${countLabel})</span>
+        </div>
+        <div class="ability-cb-list">${cbHtml}</div>
+      </div>
+      <div class="ability-result-chars-wrap">
+        <div class="ability-result-chars">${chips.length ? chips : '<span style="color:var(--text-dim);font-size:11px">該当なし</span>'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function setFilter(attr) {
+  currentFilter = attr;
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.attr === attr);
+  });
+  renderCharGrid();
+}
+
+function getFilteredChars() {
+  const q = document.getElementById('searchInput').value.trim();
+  return CHARS.filter(c => {
+    const attrOk = currentFilter === '全' || c.attr === currentFilter;
+    const nameOk = !q || c.name.includes(q);
+    return attrOk && nameOk;
+  });
+}
+
+function renderCharGrid() {
+  const grid = document.getElementById('charGrid');
+  const chars = getFilteredChars();
+  grid.innerHTML = chars.map(c => `
+    <div class="char-chip" onclick="onCharClick('${c.name.replace(/'/g,"\\'")}')">
+      <span class="attr-dot dot-${c.attr}"></span>${c.name}
+    </div>
+  `).join('');
+}
+
+function onCharClick(name) {
+  const char = CHARS.find(c => c.name === name);
+  if (!char) return;
+
+  if (selectingSlot !== null) {
+    // スロット選択モード
+    squad[selectingSlot] = char;
+    selectingSlot = null;
+    updateSlotHint(false);
+  } else {
+    // 空きスロットに自動追加
+    const emptyIdx = squad.findIndex(s => s === null);
+    if (emptyIdx === -1) return; // 満員
+    squad[emptyIdx] = char;
+  }
+  renderSquad();
+  renderAbilities();
+}
+
+function removeFromSlot(idx) {
+  squad[idx] = null;
+  renderSquad();
+  renderAbilities();
+}
+
+function clearSquad() {
+  squad = [null, null, null, null, null, null];
+  selectingSlot = null;
+  updateSlotHint(false);
+  renderSquad();
+  renderAbilities();
+}
+
+function selectSlot(idx) {
+  if (selectingSlot === idx) {
+    selectingSlot = null;
+    updateSlotHint(false);
+  } else {
+    selectingSlot = idx;
+    updateSlotHint(true);
+  }
+  renderSquad();
+}
+
+function updateSlotHint(show) {
+  const hint = document.getElementById('slotHint');
+  hint.classList.toggle('visible', show);
+}
+
+function renderSquad() {
+  const container = document.getElementById('squadSlots');
+  const positions = ['前衛1','前衛2','前衛3','後衛1','後衛2','後衛3'];
+  container.innerHTML = squad.map((char, i) => {
+    const isSelecting = selectingSlot === i;
+    if (char) {
+      return `
+        <div class="slot filled bg-${char.attr} ${isSelecting ? 'selecting' : ''}" onclick="selectSlot(${i})">
+          <button class="slot-remove" onclick="event.stopPropagation(); removeFromSlot(${i})">✕</button>
+          <div class="slot-num">${positions[i]}</div>
+          <span class="slot-attr-badge badge-${char.attr}">${char.attr}</span>
+          <div class="slot-name">${char.name}</div>
+        </div>
+      `;
+    } else {
+      return `
+        <div class="slot ${isSelecting ? 'selecting' : ''}" onclick="selectSlot(${i})">
+          <div class="slot-num">${positions[i]}</div>
+          <div class="slot-empty-text">${isSelecting ? '← キャラ選択' : 'タップして\n配置'}</div>
+        </div>
+      `;
+    }
+  }).join('');
+}
+
+function renderAbilities() {
+  const content = document.getElementById('abilityContent');
+  const active = squad.filter(Boolean);
+  if (active.length === 0) {
+    content.innerHTML = '<div class="empty-squad">部隊にキャラを追加すると<br>能力一覧が表示されます</div>';
+    return;
+  }
+
+  // 各能力に対して、誰がどのように付与するか収集
+  const abilityMap = {};
+  ALL_ABILITIES.forEach(ab => {
+    const contributors = [];
+    active.forEach(char => {
+      if (char.abilities[ab]) {
+        contributors.push({ name: char.name, attr: char.attr, how: char.abilities[ab] });
+      }
+    });
+    if (contributors.length > 0) abilityMap[ab] = contributors;
+  });
+
+  if (Object.keys(abilityMap).length === 0) {
+    content.innerHTML = '<div class="empty-squad">このメンバーには特定の能力データがありません</div>';
+    return;
+  }
+
+  const catColors = { atk: 'cat-atk', def: 'cat-def', dmg: 'cat-dmg', other: 'cat-other' };
+  const rows = Object.entries(abilityMap).map(([ab, chars]) => {
+    const cat = ABILITY_CATS[ab] || 'other';
+    const tags = chars.map(c => `
+      <div class="ability-tag bg-${c.attr}">
+        <span class="tag-name attr-${c.attr}">${c.name}</span>
+        <span class="tag-how">${c.how}</span>
+      </div>
+    `).join('');
+    return `
+      <tr>
+        <td class="ability-name ${catColors[cat]}">${ab}</td>
+        <td><div class="ability-char-list">${tags}</div></td>
+      </tr>
+    `;
+  }).join('');
+
+  content.innerHTML = `
+    <table class="ability-table">
+      <thead>
+        <tr>
+          <th style="width:140px">能力</th>
+          <th>キャラ / 発動条件</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+}
+
+// 初期化
+renderCharGrid();
+renderSquad();
+renderAbilities();
+</script>
+</body>
+</html>
