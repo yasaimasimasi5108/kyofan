@@ -1,0 +1,118 @@
+name: Update Character Data
+
+on:
+  schedule:
+    - cron: '0 15 * * *'  # 毎日 日本時間 0:00 に実行
+  workflow_dispatch:        # 手動実行も可能
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Download CSV and update index.html
+        env:
+          CSV_URL: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQa-n1KmiNpUQ3W7UizEtoPDqy_xMgsSHTAwnJwbfFFlXSFJKp3m36gjFDKHszY_WCgOfOuoWEFYHSQ/pub?output=csv"
+        run: |
+          python3 << 'PYEOF'
+          import os, csv, io, json, re
+          from urllib.request import urlopen
+          from collections import defaultdict
+
+          CSV_URL = os.environ['CSV_URL']
+
+          # CSV取得
+          with urlopen(CSV_URL) as res:
+              data = res.read().decode('utf-8')
+
+          # CSVパース
+          reader = csv.DictReader(io.StringIO(data))
+          chars = []
+          for r in reader:
+              abilities = {}
+              for k, v in r.items():
+                  if k not in ['名前', '屬'] and v and v.strip():
+                      abilities[k.strip()] = v.strip()
+              if r.get('名前', '').strip():
+                  chars.append({'name': r['名前'].strip(), 'attr': r['屬'].strip(), 'abilities': abilities})
+
+          chars_json = json.dumps(chars, ensure_ascii=False)
+          print(f"キャラ数: {len(chars)}")
+
+          # ABILITY_TAGS再生成
+          ALL_ABILITIES = [
+              '魔法攻撃UP','物理攻撃UP','物理防御DOWN','魔法防御DOWN','x属性攻撃UP',
+              'x属性の敵からの被ダメージUP','ダメージUP','回数付ダメージUP','回数付魔法ダメージUP',
+              '回数付物理ダメージUP','物理ダメージUP','魔法ダメージUP','加算ダメージUP',
+              '加算魔法ダメージUP','加算物理ダメージUP','通常攻撃被ダメージUP','通常攻撃追撃',
+              '被ダメージUP','スキル追加ダメージ','奥義被ダメージUP','奥義追加ダメージ','スキル被ダメージUP'
+          ]
+
+          def normalize_tags(val):
+              tags = set()
+              if '味方全体' in val: tags.add('味方全体')
+              if '味方1人' in val: tags.add('味方1人')
+              if re.search(r'[炎水風聖魔想]属性', val): tags.add('属性限定')
+              if '自分' in val: tags.add('自分')
+              if val.startswith('A') or '+A' in val or 'A+' in val: tags.add('A')
+              if val.startswith('B') or '+B' in val or 'B+' in val: tags.add('B')
+              if '奥義' in val: tags.add('奥義')
+              if 'パッシブ' in val: tags.add('パッシブ')
+              if 'スキル' in val: tags.add('スキル')
+              if '特殊' in val: tags.add('特殊')
+              return tags
+
+          ability_values = defaultdict(set)
+          for c in chars:
+              for ab, v in c['abilities'].items():
+                  ability_values[ab].add(v)
+
+          ability_tags = {}
+          for ab in ALL_ABILITIES:
+              all_tags = set()
+              for val in ability_values[ab]:
+                  all_tags |= normalize_tags(val)
+              if all_tags:
+                  ability_tags[ab] = sorted(all_tags)
+
+          ability_tags_json = json.dumps(ability_tags, ensure_ascii=False)
+
+          # index.html 更新
+          with open('index.html', 'r', encoding='utf-8') as f:
+              html = f.read()
+
+          # CHARS置き換え
+          old_chars_start = 'const CHARS = ['
+          old_chars_end = '];\n\n// 能力カテゴリ分類'
+          start_idx = html.index(old_chars_start)
+          end_idx = html.index(old_chars_end) + len(old_chars_end)
+          html = html[:start_idx] + f'const CHARS = {chars_json};\n\n// 能力カテゴリ分類' + html[end_idx:]
+
+          # ABILITY_TAGS置き換え
+          old_at_start = 'const ABILITY_TAGS = {'
+          old_at_end = '};'
+          at_start = html.index(old_at_start)
+          at_end = html.index(old_at_end, at_start) + len(old_at_end)
+          html = html[:at_start] + f'const ABILITY_TAGS = {ability_tags_json};' + html[at_end:]
+
+          with open('index.html', 'w', encoding='utf-8') as f:
+              f.write(html)
+
+          print("index.html updated!")
+          PYEOF
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || git commit -m "Auto update character data $(date +'%Y-%m-%d')"
+          git push
