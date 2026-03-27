@@ -16,6 +16,42 @@
     --accent2: #e8c98e;
     --text: #e8e0d0;
     --text-dim: #888;
+
+  /* ライトモード */
+  body.light {
+    --bg: #fafffa;
+    --surface: #ffffff;
+    --surface2: #f0f7f0;
+    --border: #c8d8c8;
+    --accent: #9a6f2e;
+    --accent2: #b8882e;
+    --text: #1a1a1a;
+    --text-dim: #666;
+  }
+  body.light header {
+    background: linear-gradient(180deg, #eaf4ea 0%, var(--bg) 100%);
+  }
+  body.light .char-grid {
+    background: var(--surface2);
+  }
+  body.light .slot {
+    background: var(--surface2);
+  }
+  body.light .squad-area {
+    background: var(--bg);
+  }
+  body.light .search-area {
+    background: var(--surface2);
+  }
+  body.light .search-input {
+    background: var(--bg);
+  }
+  body.light .ability-section {
+    background: var(--surface2);
+  }
+  body.light .ability-section-title {
+    background: var(--surface2);
+  }
     --炎: #ff6b35;
     --炎bg: rgba(255,107,53,0.15);
     --水: #4fc3f7;
@@ -470,6 +506,26 @@
     display: none;
   }
   .slot-hint.visible { display: block; }
+
+  /* テーマ切り替えボタン */
+  .theme-toggle {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: rgba(200,169,110,0.15);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+    transition: all 0.2s;
+  }
+  .theme-toggle:hover {
+    background: rgba(200,169,110,0.3);
+  }
+  header { position: relative; }
 </style>
 </head>
 <body>
@@ -477,6 +533,7 @@
 <header>
   <h1>✦ Etoile Squad Builder ✦</h1>
   <p>巨乳ファンタジーバースト — 部隊サポートツール</p>
+  <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">☀️ ライト</button>
 </header>
 
 <!-- キャラ選択エリア -->
@@ -866,6 +923,27 @@ function renderAbilities() {
       <tbody>${rows}</tbody>
     </table>
   `;
+}
+
+// テーマ切り替え
+function toggleTheme() {
+  const body = document.body;
+  const btn = document.getElementById('themeToggle');
+  if (body.classList.contains('light')) {
+    body.classList.remove('light');
+    btn.textContent = '☀️ ライト';
+    localStorage.setItem('theme', 'dark');
+  } else {
+    body.classList.add('light');
+    btn.textContent = '🌙 ダーク';
+    localStorage.setItem('theme', 'light');
+  }
+}
+
+// テーマ復元
+if (localStorage.getItem('theme') === 'light') {
+  document.body.classList.add('light');
+  document.getElementById('themeToggle').textContent = '🌙 ダーク';
 }
 
 // 初期化
