@@ -52,6 +52,42 @@
   body.light .ability-section-title {
     background: var(--surface2);
   }
+  /* ライトモード 能力検索エリア */
+  body.light .ability-cb-chip {
+    background: var(--surface);
+    color: var(--text);
+    border-color: var(--border);
+  }
+  body.light .ability-cb-chip.checked {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(154,111,46,0.1);
+  }
+  /* ライトモード キャラチップの文字色を黒に */
+  body.light .ability-result-chip .attr-炎,
+  body.light .ability-result-chip .attr-水,
+  body.light .ability-result-chip .attr-風,
+  body.light .ability-result-chip .attr-聖,
+  body.light .ability-result-chip .attr-魔,
+  body.light .ability-result-chip .attr-想 {
+    color: #111;
+    font-weight: normal;
+  }
+
+  /* 能力名カテゴリ色をライトモードで濃く */
+  body.light .cat-atk { color: #aa1100; }
+  body.light .cat-def { color: #005577; }
+  body.light .cat-dmg { color: #775500; }
+  body.light .cat-other { color: #445566; }
+
+  /* カテゴリチップのライトモード色 */
+  body.light .ability-filter-chip { color: #333; border-color: #aaa; }
+  body.light .ability-filter-chip.active { border-color: #555; color: #333; background: rgba(0,0,0,0.08); }
+  body.light .ability-filter-chip.cat-atk.active { border-color: #aa1100; color: #aa1100; background: rgba(170,17,0,0.1); }
+  body.light .ability-filter-chip.cat-def.active { border-color: #005577; color: #005577; background: rgba(0,85,119,0.1); }
+  body.light .ability-filter-chip.cat-dmg.active { border-color: #775500; color: #775500; background: rgba(119,85,0,0.1); }
+  body.light .ability-filter-chip.cat-other.active { border-color: #445566; color: #445566; background: rgba(68,85,102,0.1); }
+
   /* ライトモード属性カラーを濃く */
   body.light {
     --炎: #d44000;
@@ -137,7 +173,7 @@
   .search-tab.active {
     background: rgba(200,169,110,0.15);
     color: var(--accent);
-    font-weight: 700;
+    font-weight: 500;
   }
   .search-tab:not(:last-child) { border-right: 1px solid var(--border); }
 
@@ -184,7 +220,7 @@
   .ability-result-group { margin-bottom: 10px; }
   .ability-result-label {
     font-size: 10px;
-    font-weight: 700;
+    font-weight: 500;
     margin-bottom: 5px;
     letter-spacing: 0.08em;
   }
@@ -311,7 +347,7 @@
   }
   .squad-title {
     font-size: 13px;
-    font-weight: 700;
+    font-weight: 500;
     color: var(--accent);
     letter-spacing: 0.1em;
   }
@@ -365,7 +401,7 @@
     padding: 2px 7px;
     border-radius: 10px;
     font-size: 10px;
-    font-weight: 700;
+    font-weight: 500;
     margin-bottom: 5px;
   }
   .slot-name {
@@ -405,7 +441,7 @@
   .ability-section-title {
     padding: 10px 16px;
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 500;
     color: var(--accent);
     letter-spacing: 0.1em;
     border-bottom: 1px solid var(--border);
@@ -760,7 +796,7 @@ function renderAbilitySearch() {
     const chips = filteredChars.map(ch => {
       const safeName = ch.name.replace(/'/g, "\'");
       return `<div class="ability-result-chip bg-${ch.attr}" onclick="onCharClick('${safeName}')">
-        <span class="attr-${ch.attr}" style="font-weight:700">${ch.name}</span>
+        <span class="attr-${ch.attr}" style="font-weight:500">${ch.name}</span>
         <span class="chip-how">${ch.abilities[ab]}</span>
       </div>`;
     }).join('');
@@ -772,7 +808,7 @@ function renderAbilitySearch() {
     return `<div class="ability-result-group">
       <div class="ability-result-header">
         <div class="ability-result-header-label">
-          <span class="${catColors[cat]}" style="font-size:11px;font-weight:700">${ab}</span>
+          <span class="${catColors[cat]}" style="font-size:11px;font-weight:500">${ab}</span>
           <span class="ability-result-count">(${countLabel})</span>
         </div>
         <div class="ability-cb-list">${cbHtml}</div>
